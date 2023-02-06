@@ -34,8 +34,8 @@ public class TicketRepository {
         return false;
     }
     
-    public boolean Update(Ticket ticket) {
-
+    public boolean Update(Ticket ticket, String status) {
+        return false;
     }
 
     public List<Ticket> getAllUserTickets() {

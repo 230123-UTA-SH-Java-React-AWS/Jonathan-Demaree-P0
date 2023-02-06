@@ -29,7 +29,7 @@ public class AuthRepository {
         return false;
     }
 
-    public boolean Register(User user) {
+    public User Register(User user) {
 
         String sql = "insert into employee (fname, lname, email, password, role) values (?, ?, ?, ?, ?) where exists (email) do nothing;";
         ResultSet rs;
@@ -49,7 +49,9 @@ public class AuthRepository {
 
             if (rs.next()) {
                 System.out.println(rs.next());
-                return true;
+                user.setUserId(rs.getInt(0));
+
+                return user;
             } else {
                 System.out.println("New user was not registered");
             }
@@ -59,7 +61,7 @@ public class AuthRepository {
             //TODO: handle exception
             e.printStackTrace();
         }
-        return false;
+        return null;
     }
     
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 
 import com.revature.models.Ticket;
-import com.revature.models.User;
 import com.revature.repositories.TicketRepository;
 
 import org.codehaus.jackson.JsonGenerationException;
@@ -65,20 +64,13 @@ public class TicketService {
         return jsonString;
     }
 
-    public void processTicket(String newStatus)
+    public void processTicket(Ticket ticket, String newStatus)
     {
         try {
-            Ticket newTicket = mapper.readValue(ticketJson, Ticket.class);
-            ticketrepo.updateTicket(newTicket);
+            ticketrepo.Update(ticket, newStatus);
 
-        } catch (JsonParseException e) {
+        } catch (Exception e) {
             System.out.println("Unable to parse JSON data provided.");
-            e.printStackTrace();
-        } catch (JsonMappingException e) {
-            System.out.println("Unable to map JSON to Java object.");
-            e.printStackTrace();
-        } catch (IOException e) {
-            System.out.println("JSON input was invalid or not found.");
             e.printStackTrace();
         }
     }
