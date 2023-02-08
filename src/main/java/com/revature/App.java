@@ -12,9 +12,6 @@ import com.revature.models.User;
 import com.sun.net.httpserver.HttpServer;
 
 
-/**
- * Hello world!
- */
 public final class App {
 
     public static User currUser;
@@ -25,11 +22,8 @@ public final class App {
     
 
     public static void main(String[] args) throws IOException, SQLException {
-        System.out.println("Running");
 
         currUser = null;
-
-
  
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
 
@@ -38,6 +32,7 @@ public final class App {
 
         server.setExecutor(null);
         server.start();
+        System.out.println("Server online");
     }
 
 

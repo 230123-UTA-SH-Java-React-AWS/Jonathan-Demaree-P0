@@ -4,61 +4,86 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+import org.postgresql.util.PSQLException;
+
+import com.revature.App;
 import com.revature.models.User;
+import com.revature.models.User.Role;
 import com.revature.utils.ConnectionUtil;
 
 
 public class AuthRepository {
 
-    public boolean Login(String email, String password) {
+    public User Login(String email, String password) {
 
-        String sql = "select exists(select 1 from users where email = ? and password = ?)";
+        User user = new User();
+        ResultSet rs;
+        String sql = "select * from users where email = ? and user_password = ?;";
 
         try (Connection con = ConnectionUtil.getConnection()) {
  
             PreparedStatement prstmt = con.prepareStatement(sql);
             prstmt.setString(1, email);
             prstmt.setString(2, password);
+            rs = prstmt.executeQuery();
+            while (rs.next()) {
+                user.setUserId(rs.getInt(1));
+                user.setFName(rs.getString(2));
+                user.setLName(rs.getString(3));
+                user.setEmail(rs.getString(4));
+                user.setPassword(rs.getString(6));
+                String roleName = rs.getString(5);
+                if (roleName.equals(Role.MANAGER.toString())) {
+                    user.setRole(Role.MANAGER);
+                } else {
+                    user.setRole(Role.EMPLOYEE);
+                }
+                
+            }
 
-            return prstmt.execute();
+            App.currUser = user;
+
+            return user;
 
         } catch (Exception e) {
+            System.out.println("FailED to connect to DB");
             e.printStackTrace();
         }
 
-        return false;
+        return null;
     }
 
     public User Register(User user) {
 
-        String sql = "insert into employee (fname, lname, email, password, role) values (?, ?, ?, ?, ?) where exists (email) do nothing;";
-        ResultSet rs;
+        String sql = "insert into users (first_name, last_name, email, user_password, user_role) values (?, ?, ?, ?, ?) returning *";
+        ResultSet rs = null;
 
          try (Connection con = ConnectionUtil.getConnection()) {
  
-            PreparedStatement prstmt = con.prepareStatement(sql);
+             PreparedStatement prstmt = con.prepareStatement(sql);
 
             prstmt.setString(1, user.getFName());
             prstmt.setString(2, user.getLName());
             prstmt.setString(3, user.getEmail());
             prstmt.setString(4, user.getPassword());
             prstmt.setString(5, user.getRole().toString());
-
-            rs = prstmt.executeQuery();
-            System.out.println(rs);
-
-            if (rs.next()) {
-                System.out.println(rs.next());
-                user.setUserId(rs.getInt(0));
-
-                return user;
-            } else {
-                System.out.println("New user was not registered");
+            try {
+                rs = prstmt.executeQuery();
+            } catch (PSQLException e) {
+                System.out.println("Email is already in use.");
             }
 
+            rs.next();
+            
+            if (rs != null && (rs.getInt(1) > 0)) {
+                user.setUserId(rs.getInt(1));
+                
+                return user;
+            } else {
+                System.out.println("New user was not registered.");
+            }
 
         } catch (Exception e) {
-            //TODO: handle exception
             e.printStackTrace();
         }
         return null;

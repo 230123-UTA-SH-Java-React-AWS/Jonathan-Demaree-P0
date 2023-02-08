@@ -6,7 +6,7 @@ import java.sql.SQLException;
 
 public class ConnectionUtil {
 
-    private static Connection conn;
+    private static Connection conn = null;
 
     private ConnectionUtil() {
         conn = null;
@@ -15,7 +15,6 @@ public class ConnectionUtil {
     public static Connection getConnection()
     {
         try {
-
             if (conn != null && !conn.isClosed()) {
                 return conn;
             }
@@ -23,14 +22,11 @@ public class ConnectionUtil {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
-        String url, user, pass;
-
-        url = System.getenv("url");
-        user = System.getenv("user");
-        pass = System.getenv("pass");
-        System.out.println("url: " + url + "\nusername: " + user + "\npassword: " + pass);
-
+        String url = "jdbc:postgresql://";
+        url += System.getenv("url");
+        url += "/";
+        String user = System.getenv("user");
+        String pass = System.getenv("pass");
 
         try {
             conn = DriverManager.getConnection(url, user, pass);

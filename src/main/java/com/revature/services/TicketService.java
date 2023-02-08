@@ -3,7 +3,9 @@ package com.revature.services;
 import java.io.IOException;
 import java.util.List;
 
+import com.revature.App;
 import com.revature.models.Ticket;
+import com.revature.models.User;
 import com.revature.repositories.TicketRepository;
 
 import org.codehaus.jackson.JsonGenerationException;
@@ -23,12 +25,24 @@ public class TicketService {
     }
 
 
-    public void saveTicket(String ticketJson)
-    {
+    public String saveTicket(String ticketJson) {
+        String jsonString = "";
+
+        if (App.currUser == null) {
+            return "Please login before attempting to create a ticket.";
+        }
+
         try {
             Ticket newTicket = mapper.readValue(ticketJson, Ticket.class);
-            ticketrepo.Save(newTicket);
+            newTicket.setUserId(App.currUser.getUserId());
+            newTicket.setStatus("PENDING");
+            System.out.println(newTicket.getStatus());
+            newTicket = ticketrepo.Save(newTicket);
 
+            if (newTicket != null) {
+                jsonString = mapper.writeValueAsString(newTicket);
+                return jsonString;
+            }          
         } catch (JsonParseException e) {
             System.out.println("Unable to parse JSON data provided.");
             e.printStackTrace();
@@ -39,33 +53,32 @@ public class TicketService {
             System.out.println("JSON input was invalid or not found.");
             e.printStackTrace();
         }
+        return "Invalid ticket data was provided";
     }
 
-    //Converting List into 
-    public String getUserTickets()
-    {
+    public String getUserTickets() {
         List<Ticket> listOfTickets = ticketrepo.getAllUserTickets();
         String jsonString = "";
 
-        try {
-            jsonString = mapper.writeValueAsString(listOfTickets);
-
-        } catch (JsonGenerationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (JsonMappingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        if (App.currUser == null) {
+            return "Please login before attempting to create a ticket.";
         }
 
-        return jsonString;
+        listOfTickets = ticketrepo.getAllUserTickets();
+
+        if (listOfTickets != null) {
+            try {
+                jsonString = mapper.writeValueAsString(listOfTickets);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "Something failed.";
+            }
+            return jsonString;
+        } 
+        return "Invalid ticket data was provided or no tickets were found for you.";
     }
 
-    public void processTicket(Ticket ticket, String newStatus)
-    {
+    public void processTicket(Ticket ticket, String newStatus) {
         try {
             ticketrepo.Update(ticket, newStatus);
 
@@ -75,8 +88,26 @@ public class TicketService {
         }
     }
 
-    public void findPokemon()
-    {
+    public String getPendingTickets() {
+        List<Ticket> listOfTickets = ticketrepo.getAllUserTickets();
+        String jsonString = "";
 
+        if (App.currUser == null) {
+            return "Please login before attempting to create a ticket.";
+        }
+
+        listOfTickets = ticketrepo.getAllPendingTickets();
+
+        if (listOfTickets != null) {
+            try {
+                jsonString = mapper.writeValueAsString(listOfTickets);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "Something failed.";
+            }
+            return jsonString;
+        } 
+        return "Invalid ticket data was provided or no pending tickets were found for you.";
     }
+
 }

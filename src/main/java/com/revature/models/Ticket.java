@@ -5,17 +5,19 @@ import com.revature.App;
 public class Ticket {
     private int ticketId;
     private int amount;
+    private int userId;
     
     private String desc;
-    private String userEmail;
     private String status;
 
-    public Ticket(int ticketAmount, String ticketDesc, String userEmail) {
+    public Ticket(int ticketAmount, String ticketDesc) {
         this.amount = ticketAmount;
         this.desc = ticketDesc;
-        this.userEmail = App.currUser.getEmail();
+        this.userId = App.currUser.getUserId();
         this.status = "PENDING";
     }
+
+    public Ticket(){}
 
     public int getTicketId() {
         return ticketId;
@@ -37,30 +39,21 @@ public class Ticket {
         return status;
     }
 
-    public boolean setStatus(String ticketStatus) {
-        boolean changed = false;
-        if(status == "PENDING") {
-            switch (ticketStatus) {
-                case "PENDING":
-                    System.out.println("Ticket skipped for later review.");
-                    break;
-                case "APPROVED":
-                    this.status = "APPROVED";
-                    changed = true;
-                    System.out.println("Ticket has been approved.");
-                    break;
-                case "DENIED":
-                    this.status = "DENIED";
-                    changed = true;
-                    System.out.println("Ticket has been denied.");
-                default:
-                    System.out.println("Invalid ticket status change request.");
-            }
-        } else {
-            System.out.println("Ticket has already been processed.");
+    public void setStatus(String ticketStatus) {
+        switch (ticketStatus) {
+            case "PENDING":
+                this.status = "PENDING";
+                break;
+            case "APPROVED":
+                this.status = "APPROVED";
+                break;
+            case "DENIED":
+                this.status = "DENIED";
+            default:
+                System.out.println("Invalid ticket status request.");
         }
-        return changed;
     }
+    
 
     public String getDesc() {
         return desc;
@@ -70,12 +63,12 @@ public class Ticket {
         this.desc = ticketDesc;
     }
 
-    public String getUserEmail() {
-        return userEmail;
+    public int getUserId() {
+        return userId;
     }
 
-    public void setUserEmail(String email) {
-        this.userEmail = email;
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
     
 
