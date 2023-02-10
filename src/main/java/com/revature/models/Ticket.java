@@ -49,6 +49,7 @@ public class Ticket {
                 break;
             case "DENIED":
                 this.status = "DENIED";
+                break;
             default:
                 System.out.println("Invalid ticket status request.");
         }

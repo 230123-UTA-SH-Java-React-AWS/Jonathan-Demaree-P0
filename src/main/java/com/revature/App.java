@@ -1,7 +1,5 @@
 package com.revature;
 
-//import controllers.*;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -27,8 +25,14 @@ public final class App {
  
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
 
-        server.createContext("/auth", new AuthController());
-        server.createContext("/ticket", new TicketController());
+        server.createContext("/auth/register", new AuthController());
+        server.createContext("/auth/login", new AuthController());
+        server.createContext("/auth/logout", new AuthController());
+        server.createContext("/ticket/getUserTickets", new TicketController());
+        server.createContext("/ticket/getSortedUserTickets", new TicketController());
+        server.createContext("/ticket/createTicket", new TicketController());
+        server.createContext("/ticket/getPendingTickets", new TicketController());
+        server.createContext("/ticket/processTicket", new TicketController());
 
         server.setExecutor(null);
         server.start();

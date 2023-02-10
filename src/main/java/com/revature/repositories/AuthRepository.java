@@ -46,7 +46,7 @@ public class AuthRepository {
             return user;
 
         } catch (Exception e) {
-            System.out.println("FailED to connect to DB");
+            System.out.println("Failed to connect to DB");
             e.printStackTrace();
         }
 
@@ -73,9 +73,11 @@ public class AuthRepository {
                 System.out.println("Email is already in use.");
             }
 
-            rs.next();
+            if (rs == null) {
+                return null;
+            };
             
-            if (rs != null && (rs.getInt(1) > 0)) {
+            if (rs.getInt(1) > 0) {
                 user.setUserId(rs.getInt(1));
                 
                 return user;

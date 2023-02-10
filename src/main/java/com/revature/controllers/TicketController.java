@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -24,27 +25,80 @@ public class TicketController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
 
         String httpVerb = exchange.getRequestMethod();
-        if(App.currUser != null ) {
+        URI uri = exchange.getRequestURI();
+        String s = uri.getPath();
+                
+
+        if (App.currUser != null) {
+            Role role = App.currUser.getRole();
+
             switch (httpVerb) {
                 case "GET":
-                    if (App.currUser.getRole() == Role.MANAGER) {
-                        getPendingTickets(exchange);
-                    } 
-                    else {
-                        getUserTickets(exchange);
+                    if (role == Role.MANAGER) {
+                        if (s.equals("/ticket/getPendingTickets")) {
+                            getPendingTickets(exchange);
+                        } else {
+                            String response = "Invalid endpoint for manager access.";
+
+                            exchange.sendResponseHeaders(403, response.getBytes().length);
+    
+                            OutputStream os = exchange.getResponseBody();
+                            os.write(response.getBytes());
+                            os.close();
+                            break;
+                        }
                     }
-                    break;
+                    if (role == Role.EMPLOYEE) {
+                        if (s.equals("/ticket/getUserTickets")){
+                            getUserTickets(exchange);
+                        } else if (s.equals("/ticket/getSortedUserTickets")) {
+                            getSortedUserTickets(exchange);
+                        } else {
+                            String response = "Invalid endpoint for employee access.";
+
+                            exchange.sendResponseHeaders(403, response.getBytes().length);
+    
+                            OutputStream os = exchange.getResponseBody();
+                            os.write(response.getBytes());
+                            os.close();
+                            break;
+                        }
+                    }
                 case "POST":
-                        createTicket(exchange);
+                    if (role == Role.EMPLOYEE) {
+                        if (s.equals("/ticket/createTicket")) {
+                            createTicket(exchange);
+                        }
+                    } else {
+                        String response = "Invalid endpoint for Manager access.";
+
+                        exchange.sendResponseHeaders(403, response.getBytes().length);
+
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(response.getBytes());
+                        os.close();
+                    }
+                    
                     break;
                 case "PUT":
-                    if (App.currUser.getRole() == Role.MANAGER) {
-                        processTicket(exchange);
+                    if (role == Role.MANAGER) {
+                        if (s.equals("/ticket/processTicket")) {
+                            processTicket(exchange);
+                        }
+                    } else {
+                        String response = "Only managers can access this endpoint.";
+
+                        exchange.sendResponseHeaders(403, response.getBytes().length);
+
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(response.getBytes());
+                        os.close();
+                        break;
                     }
                 default:
-                    String someResponse = "HTTP Verb not supported; employees use GET or POST, managers use GET or PUT.";
+                    String someResponse = "END POINT NOT FOUND.";
 
-                    exchange.sendResponseHeaders(404, someResponse.getBytes().length);
+                    exchange.sendResponseHeaders(403, someResponse.getBytes().length);
 
                     OutputStream os = exchange.getResponseBody();
                     os.write(someResponse.getBytes());
@@ -52,43 +106,85 @@ public class TicketController implements HttpHandler {
                     break;
             }
         } else {
-            System.out.println("You must be logged in to complete this action.");
+            String forbid = "Error - Forbidden from accessing. Must log in first.";
+
+            exchange.sendResponseHeaders(401, forbid.getBytes().length);
+
+            OutputStream os = exchange.getResponseBody();
+            os.write(forbid.getBytes());
+            os.close();
         }
     }
 
     public void getPendingTickets(HttpExchange exchange) throws IOException
     {
-        StringBuilder textBuilder = new StringBuilder();
         String response = "";
 
-        
-
-        exchange.sendResponseHeaders(200, textBuilder.toString().getBytes().length);
-
         response = ticketService.getPendingTickets();
-        System.out.println(response);
+        byte[] output = response.getBytes(Charset.forName("UTF-8"));
+
+        if(!response.toUpperCase().contains("ERROR")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
         
         OutputStream os = exchange.getResponseBody();
 
-        os.write(textBuilder.toString().getBytes());
+        os.write(response.getBytes());
         os.close();
     }
 
     public void getUserTickets(HttpExchange exchange) throws IOException
     {
-        StringBuilder textBuilder = new StringBuilder();
         String response = "";
 
-        
-
-        exchange.sendResponseHeaders(200, textBuilder.toString().getBytes().length);
-
         response = ticketService.getUserTickets();
-        System.out.println(response);
+        byte[] output = response.getBytes(Charset.forName("UTF-8"));
+
+        if(!response.toUpperCase().contains("ERROR:")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
 
         OutputStream os = exchange.getResponseBody();
 
-        os.write(textBuilder.toString().getBytes());
+        os.write(output);
+        os.close();
+    }
+    
+    public void getSortedUserTickets(HttpExchange exchange) throws IOException
+    {
+        InputStream input = exchange.getRequestBody();
+        StringBuilder textBuilder = new StringBuilder();
+        String response = "";
+
+        try (Reader r = new BufferedReader(new InputStreamReader(input, Charset.forName(StandardCharsets.UTF_8.name())))) {
+            int charIndex;
+
+            while ((charIndex = r.read()) != -1) {
+                textBuilder.append((char) charIndex);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String userInput = textBuilder.toString();
+
+        response = ticketService.getSortedUserTickets(userInput);
+
+        byte[] output = response.getBytes(Charset.forName("UTF-8"));
+
+        if(!response.toUpperCase().contains("ERROR:")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
+
+        OutputStream os = exchange.getResponseBody();
+
+        os.write(output);
         os.close();
     }
 
@@ -108,26 +204,52 @@ public class TicketController implements HttpHandler {
             throw new RuntimeException(e);
         }
 
-        exchange.sendResponseHeaders(200, textBuilder.toString().getBytes().length);
 
         response = ticketService.saveTicket(textBuilder.toString());
-        System.out.println(response);
+   
+        byte[] output = response.getBytes(Charset.forName("UTF-8"));
+
+        if(!response.toUpperCase().contains("ERROR:")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
 
         OutputStream os = exchange.getResponseBody();
 
-        os.write(textBuilder.toString().getBytes());
+        os.write(output);
         os.close();
     }
     
     public void processTicket(HttpExchange exchange) throws IOException
     {
-        String someResponse = "You selected the put response!";
+        InputStream input = exchange.getRequestBody();
+        StringBuilder textBuilder = new StringBuilder();
+        String response = "";
 
-        // Add logic to send new ticket
-        exchange.sendResponseHeaders(200, someResponse.getBytes().length);
+        try (Reader r = new BufferedReader(new InputStreamReader(input, Charset.forName(StandardCharsets.UTF_8.name())))) {
+            int charIndex;
+
+            while ((charIndex = r.read()) != -1) {
+                textBuilder.append((char) charIndex);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        response = ticketService.processTicket(textBuilder.toString());
+
+        byte[] output = response.getBytes(Charset.forName("UTF-8"));
+
+        if(!response.toUpperCase().contains("ERROR:")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
 
         OutputStream os = exchange.getResponseBody();
-        os.write(someResponse.getBytes());
+
+        os.write(output);
         os.close();
     }
     

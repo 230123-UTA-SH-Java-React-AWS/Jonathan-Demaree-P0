@@ -42,8 +42,39 @@ public class TicketRepository {
         return null;
     }
     
-    public boolean Update(Ticket ticket, String status) {
-        return false;
+    public String Update(int ticketId, String status) {
+
+        ResultSet rs;
+        Ticket ticketToCheck = getTicketById(ticketId);
+        System.out.println("in update: " + ticketToCheck);
+
+        if (ticketToCheck.getTicketId() == 0) {
+            return "Error: Ticket ID specified does not exist";
+        }
+        
+        if (ticketToCheck.getStatus() != "PENDING") {
+            return "Error: Ticket has already been processed";
+        }
+        
+        String sql = "update tickets set status = (?) WHERE ticket_id = (?) returning ticket_id, status";
+
+        try (Connection con = ConnectionUtil.getConnection()) {
+
+            PreparedStatement prstmt = con.prepareStatement(sql);
+            prstmt.setString(1, status);
+            prstmt.setInt(2, ticketId);
+
+            rs = prstmt.executeQuery();
+
+            if (rs.next()) {
+                return "Ticket succesfully set as: " + status;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "Error: Database issue.";
+        }
+
+        return "Error: Ticket unsuccessfully updated.";
     }
 
     public List<Ticket> getAllUserTickets() {
@@ -55,6 +86,60 @@ public class TicketRepository {
         try (Connection con = ConnectionUtil.getConnection()) {
 
             PreparedStatement prstmt = con.prepareStatement(sql);
+            prstmt.setInt(1, App.currUser.getUserId());
+
+            rs = prstmt.executeQuery();
+
+            while (rs.next()) {
+                Ticket newTicket = new Ticket();
+                newTicket.setTicketId(rs.getInt(1));
+                newTicket.setAmount(rs.getInt(2));
+                newTicket.setUserId(rs.getInt(5));
+                newTicket.setDesc(rs.getString(3));
+                newTicket.setStatus(rs.getString(4));
+
+                userTickets.add(newTicket);
+            }
+            return userTickets;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public List<Ticket> getSortedUserTickets(String filter) {
+        ResultSet rs;
+        List<Ticket> userTickets = new ArrayList<Ticket>();
+
+
+        String sql = "select * from tickets where (fk_user_id) = (?) order by case status when 'APPROVED' then (?) when 'PENDING' then (?) when 'DENIED' then (?) end";
+
+        try (Connection con = ConnectionUtil.getConnection()) {
+
+            PreparedStatement prstmt = con.prepareStatement(sql);
+
+            switch (filter) {
+                case "APPROVED":
+                    prstmt.setInt(2, 1);
+                    prstmt.setInt(3, 3);
+                    prstmt.setInt(4, 2);
+                    break;
+                case "DENIED":
+                    prstmt.setInt(2, 2);
+                    prstmt.setInt(3, 3);
+                    prstmt.setInt(4, 1);
+                    break;
+                case "PENDING":
+                    prstmt.setInt(2, 2);
+                    prstmt.setInt(3, 1);
+                    prstmt.setInt(4, 3);
+                    break;
+                default:
+                    return null;
+            }
+
             prstmt.setInt(1, App.currUser.getUserId());
 
             rs = prstmt.executeQuery();
@@ -90,7 +175,7 @@ public class TicketRepository {
             prstmt.setString(1, "PENDING");
 
             rs = prstmt.executeQuery();
-            
+
             while (rs.next()) {
                 Ticket newTicket = new Ticket();
                 newTicket.setTicketId(rs.getInt(1));
@@ -102,12 +187,39 @@ public class TicketRepository {
                 pendingTickets.add(newTicket);
             }
             return pendingTickets;
-            
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
+        return null;
+    }
+    
+    public Ticket getTicketById(int id) {
+        ResultSet rs;
+        Ticket newTicket = new Ticket();
+
+        String sql = "select * from tickets where (ticket_id) = (?)";
+
+        try (Connection con = ConnectionUtil.getConnection()) {
+
+            PreparedStatement prstmt = con.prepareStatement(sql);
+            prstmt.setInt(1, id);
+
+            rs = prstmt.executeQuery();
+
+            while (rs.next()) {
+                newTicket.setTicketId(rs.getInt(1));
+                newTicket.setAmount(rs.getInt(2));
+                newTicket.setUserId(rs.getInt(5));
+                newTicket.setDesc(rs.getString(3));
+                newTicket.setStatus(rs.getString(4));
+            }
+            return newTicket;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 

@@ -24,21 +24,24 @@ public class AuthService {
     }
 
     public String loginUser(String userData) throws JsonGenerationException, JsonMappingException, IOException {
-        String jsonString = "";
+        String jsonString;
         String email = JsonPath.read(userData, "$.email");
         String password = JsonPath.read(userData, "$.password");
 
         if (App.currUser == null) {
             User user = authrepo.Login(email, password);
-            System.out.println("user after logging in: " + user);
-            if (user != null)
-                jsonString = mapper.writeValueAsString(user);
+            if (user.getUserId() > 0) {
+                jsonString = mapper.writeValueAsString(user.getFName());
+                jsonString += ", welcome back!";
                 return jsonString;
+            } else {
+                return "Error: Invalid username or password.";
+            }
         } else {
-            System.out.println("Must log out current user first.");
             logoutUser();
+            return "Error: Logging you out of current user account, please try logging in again.";
         }
-        return null;
+        
     }
 
     
@@ -58,10 +61,11 @@ public class AuthService {
 
                 if (newUser != null) {
                     App.currUser = newUser;
-                    jsonString = mapper.writeValueAsString(newUser);
+                    jsonString = mapper.writeValueAsString(newUser.getFName());
+                    jsonString += ", you have successfully registered.";
                     return jsonString;
                 } else {
-                    return "Registration failed";
+                    return "Error: Registration failed; email already in use.";
                 }
             } catch (JsonParseException e) {
                 e.printStackTrace();
@@ -74,8 +78,8 @@ public class AuthService {
                 System.out.println("Input invalid.");
             }
         } else {
-            System.out.println("Must log out current user first.");
             logoutUser();
+            return "Error: Logging you out of current user account, please try registering again.";
         }
         return null;
     }

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -22,13 +23,19 @@ public class AuthController implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
   
         String httpVerb = exchange.getRequestMethod();
+        URI uri = exchange.getRequestURI();
+        String s = uri.getPath();
 
         switch (httpVerb) {
             case "GET":
-                loginRequest(exchange);
+                if (s.equals("/auth/login")) {
+                    loginRequest(exchange);
+                }         
                 break;
             case "POST":
-                registerRequest(exchange);
+                if (s.equals("/auth/register")) {
+                    registerRequest(exchange);
+                }   
                 break;
             default:
                 String response = "HTTP Verb not supported; use GET to login or POST to register.";
@@ -56,13 +63,19 @@ public class AuthController implements HttpHandler {
             throw new RuntimeException(e);
         }
 
-        exchange.sendResponseHeaders(200, textBuilder.toString().getBytes().length);
-
-        authService.loginUser(textBuilder.toString());
-
         OutputStream os = exchange.getResponseBody();
 
-        os.write(textBuilder.toString().getBytes());
+        String s = authService.loginUser(textBuilder.toString());
+        byte[] output = s.getBytes(Charset.forName("UTF-8"));
+
+
+        if(!s.toUpperCase().contains("ERROR:")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
+        
+        os.write(output);
         os.close();
     }
     
@@ -82,13 +95,18 @@ public class AuthController implements HttpHandler {
             throw new RuntimeException(e);
         }
 
-        exchange.sendResponseHeaders(200, textBuilder.toString().getBytes().length);
-
-        authService.registerUser(textBuilder.toString());
+        String s = authService.registerUser(textBuilder.toString());
+        byte[] output = s.getBytes(Charset.forName("UTF-8"));
 
         OutputStream os = exchange.getResponseBody();
 
-        os.write(textBuilder.toString().getBytes());
+        if(!s.toUpperCase().contains("ERROR:")) {
+            exchange.sendResponseHeaders(200, output.length);
+        } else {
+            exchange.sendResponseHeaders(400, output.length);
+        }
+
+        os.write(output);
         os.close();
     }
 }
