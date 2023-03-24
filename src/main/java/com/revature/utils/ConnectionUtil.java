@@ -27,6 +27,9 @@ public class ConnectionUtil {
         url += "/";
         String user = System.getenv("user");
         String pass = System.getenv("pass");
+        System.out.println(url);
+        System.out.println(user);
+        System.out.println(pass);
 
         try {
             conn = DriverManager.getConnection(url, user, pass);

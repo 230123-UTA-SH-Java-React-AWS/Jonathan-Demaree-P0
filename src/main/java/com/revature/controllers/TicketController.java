@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import com.revature.App;
+import com.revature.models.User;
 import com.revature.models.User.Role;
 import com.revature.repositories.TicketRepository;
 import com.revature.services.TicketService;
@@ -24,9 +25,23 @@ public class TicketController implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
+        try {
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "OPTIONS, POST, PUT");
+
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "*");
+
+            exchange.sendResponseHeaders(202, -1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         String httpVerb = exchange.getRequestMethod();
         URI uri = exchange.getRequestURI();
         String s = uri.getPath();
+        User user = new User();
+
                 
 
         if (App.currUser != null) {
@@ -35,7 +50,8 @@ public class TicketController implements HttpHandler {
             switch (httpVerb) {
                 case "GET":
                     if (role == Role.MANAGER) {
-                        if (s.equals("/ticket/getPendingTickets")) {
+                        if (s.equals("/ticket/pendingTickets")) {
+                            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                             getPendingTickets(exchange);
                         } else {
                             String response = "Invalid endpoint for manager access.";
@@ -49,9 +65,11 @@ public class TicketController implements HttpHandler {
                         }
                     }
                     if (role == Role.EMPLOYEE) {
-                        if (s.equals("/ticket/getUserTickets")){
+                        if (s.equals("/ticket/userTickets")) {
+                            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                             getUserTickets(exchange);
-                        } else if (s.equals("/ticket/getSortedUserTickets")) {
+                        } else if (s.equals("/ticket/sortedUserTickets")) {
+                            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                             getSortedUserTickets(exchange);
                         } else {
                             String response = "Invalid endpoint for employee access.";
@@ -66,7 +84,8 @@ public class TicketController implements HttpHandler {
                     }
                 case "POST":
                     if (role == Role.EMPLOYEE) {
-                        if (s.equals("/ticket/createTicket")) {
+                        if (s.equals("/ticket/newTicket")) {
+                            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                             createTicket(exchange);
                         }
                     } else {
@@ -83,6 +102,7 @@ public class TicketController implements HttpHandler {
                 case "PUT":
                     if (role == Role.MANAGER) {
                         if (s.equals("/ticket/processTicket")) {
+                            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                             processTicket(exchange);
                         }
                     } else {

@@ -28,64 +28,48 @@ public class AuthService {
         String email = JsonPath.read(userData, "$.email");
         String password = JsonPath.read(userData, "$.password");
 
-        if (App.currUser == null) {
-            User user = authrepo.Login(email, password);
-            if (user.getUserId() > 0) {
-                jsonString = mapper.writeValueAsString(user.getFName());
-                jsonString += ", welcome back!";
-                return jsonString;
-            } else {
-                return "Error: Invalid username or password.";
-            }
-        } else {
-            logoutUser();
-            return "Error: Logging you out of current user account, please try logging in again.";
-        }
         
+        User user = authrepo.Login(email, password);
+        if (user.getUserId() > 0) {
+            jsonString = "Welcome back!";
+            return jsonString;
+        } else {
+            return "Error: Invalid username or password.";
+        }
     }
+        
 
     
 
     public String registerUser(String userJson) {
         String jsonString = "";
         
-        if (App.currUser == null) {
-            try {
-                User newUser = mapper.readValue(userJson, User.class);
+        try {
+            User newUser = mapper.readValue(userJson, User.class);
 
-                if (newUser.getRole() == null) {
-                    newUser.setRole(Role.EMPLOYEE);
-                }
-
-                newUser = authrepo.Register(newUser);
-
-                if (newUser != null) {
-                    App.currUser = newUser;
-                    jsonString = mapper.writeValueAsString(newUser.getFName());
-                    jsonString += ", you have successfully registered.";
-                    return jsonString;
-                } else {
-                    return "Error: Registration failed; email already in use.";
-                }
-            } catch (JsonParseException e) {
-                e.printStackTrace();
-                System.out.println("Could not parse Json");
-            } catch (JsonMappingException e) {
-                e.printStackTrace();
-                System.out.println("Could not map object.");
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Input invalid.");
+            if (newUser.getRole() == null) {
+                newUser.setRole(Role.EMPLOYEE);
             }
-        } else {
-            logoutUser();
-            return "Error: Logging you out of current user account, please try registering again.";
+
+            newUser = authrepo.Register(newUser);
+
+            if (newUser != null) {
+                jsonString = "You have successfully registered.";
+                return jsonString;
+            } else {
+                return "Error: Registration failed; email already in use.";
+            }
+        } catch (JsonParseException e) {
+            e.printStackTrace();
+            System.out.println("Could not parse Json");
+        } catch (JsonMappingException e) {
+            e.printStackTrace();
+            System.out.println("Could not map object.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Input invalid.");
         }
         return null;
-    }
-
-    public void logoutUser() {
-        App.currUser = null;
     }
 
 }

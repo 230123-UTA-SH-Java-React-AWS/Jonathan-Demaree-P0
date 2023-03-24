@@ -24,6 +24,7 @@ public final class App {
         currUser = null;
  
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        
 
         server.createContext("/auth/register", new AuthController());
         server.createContext("/auth/login", new AuthController());

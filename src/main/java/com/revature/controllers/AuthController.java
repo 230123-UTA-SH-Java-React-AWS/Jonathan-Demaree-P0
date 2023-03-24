@@ -21,6 +21,17 @@ public class AuthController implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        try {
+            exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+
+            exchange.getResponseHeaders().add("Access-Control-Allow-Methods", "OPTIONS, POST, PUT");
+
+            exchange.getResponseHeaders().add("Access-Control-Allow-Headers", "*");
+
+            exchange.sendResponseHeaders(202, -1);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
   
         String httpVerb = exchange.getRequestMethod();
         URI uri = exchange.getRequestURI();
@@ -34,6 +45,7 @@ public class AuthController implements HttpHandler {
                 break;
             case "POST":
                 if (s.equals("/auth/register")) {
+                    exchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
                     registerRequest(exchange);
                 }   
                 break;
